@@ -4,6 +4,7 @@
 #define handle_error(msg) \
 	do { perror(msg); exit(EXIT_FAILURE); }while(0)
 
+typedef struct persona Persona;
 typedef struct arch Archer;
 typedef struct mapa Mapa;
 
