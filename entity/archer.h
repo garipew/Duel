@@ -11,8 +11,8 @@ struct arch{
 };
 
 
-Archer* criarArq(int, int);
-void atirar(Archer*, Mensagem*);
-void atualizarArq(Archer*, Mapa*, Mensagem*);
-void apagarArq(Archer*);
+Archer* novo_archer(int, int);
+void atirar_flecha(Archer*, Mensagem*);
+void atualizar_archer(Archer*, Mensagem*);
+void apagar_archer(Archer*);
 #endif

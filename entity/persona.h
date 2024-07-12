@@ -14,4 +14,5 @@ struct persona{
 Persona* nova_persona(int, int);
 void mover(Persona*);
 void apagar_persona(Persona*);
+void desenhar_persona(Persona*);
 #endif

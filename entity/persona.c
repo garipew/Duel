@@ -79,8 +79,9 @@ void mudarDirecao(Persona* per){
 
 /* mover(Persona*, Mensagem*)
  * Recebe ponteiro para uma struct Persona e atualiza sua posicao
+ * retorna 0 em caso de sucesso
 */
-void mover(Persona* per, Mensagem* msg){
+int mover(Persona* per, Mensagem* msg){
 	mudarDirecao(per);
 	atualizarDistancia(per);
 	per->x += per->dir[0];
@@ -101,32 +102,7 @@ void mover(Persona* per, Mensagem* msg){
 	msg->acao = 'm';
 	msg->x = per->x;
 	msg->y = per->y;
-}
-
-
-/* atualizarAcao(Persona*)
- * Atualiza proxima açao de um Persona
-*/
-void atualizarAcao(Persona* per){
-	char acao[4];
-
-	printf("\t\tSeu turno\n");
-	printf("Escolha sua proxima ação, digite [m] para mover ou [a] para atirar.\n");
-	
-	do{
-		printf("Sua escolha: ");
-	
-		fgets(acao, 4, stdin);
-		sscanf(acao, "%c", &(per->acao));
-		
-		if(per->acao == 'a'){
-			if(per->flechas > 0){
-				break;
-			}
-			printf("Flechas insuficientes.\n");
-		}
-
-	} while(per->acao != 'm');
+	return 0;
 }
 
 

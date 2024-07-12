@@ -5,12 +5,10 @@
 #include <stdlib.h>
 
 
-/* criarArq(int, int)
+/* novo_archer(int, int)
  * Aloca memoria e retorna um ponteiro para struct Archer
 */
-
-Archer* criarArq(int x, int y){
-
+Archer* novo_archer(int x, int y){
 	Archer* arq = malloc(sizeof(*arq));
 	
 	arq->body = nova_persona(x, y);
@@ -20,20 +18,22 @@ Archer* criarArq(int x, int y){
 }
 
 
-
-
 /* atirar(Archer*, Mensagem*)
  * Recebe ponteiro para uma struct Archer, e, caso possua flechas
  * atira uma
+ * retorna -1 caso nao seja possivel atirar flecha
 */
+int atirar_flecha(Archer* arq, Mensagem* msg){
+	mudarDirecao(arq->body);
+	if(--arq->flechas <= 0){
+		arq->flechas++;
+		return -1;
+	}
 
-void atirar(Archer* arq, Mensagem* msg){
-	mudarDirecao(arq);
-	arq->flechas--;
-
-	msg->acao = 'a';
-	msg->x = arq->body->dir[0];
-	msg->y = arq->body->dir[1];
+	msg->acao[0] = 'a';
+	msg->x[0] = arq->body->dir[0];
+	msg->y[0] = arq->body->dir[1];
+	return 0;
 }
 
 
@@ -41,61 +41,57 @@ void atirar(Archer* arq, Mensagem* msg){
  * Checa se flecha já foi coletada por inimigo
  * Retorna 1 se a flecha está no chão e 0 caso tenha sido coletada
 */
-
 int validarFlecha(Mapa* mapa, int x, int y){
-	for(int i = 0; i < 3; i++){
-		if(mapa->flechasColetadas[i][1] == x && mapa->flechasColetadas[i][2] == y){
-			return 0;
-		}
-	}
-
-	return 1;
 }
 
 
 /* coletarFlecha(Archer*, Mapa*, Mensagem*)
  * Coleta uma flecha no chao caso mochila nao esteja cheia e esteja proximo
 */
-
 void coletarFlecha(Archer* arq, Mapa* mapa, Mensagem* msg){
-	if(mapa->pos[arq->y][arq->x] > 0 && validarFlecha(mapa, arq->x, arq->y)){
-		if(arq->flechas < 3){
-			arq->flechas++;
-			mapa->pos[arq->y][arq->x]--;
-			msg->acao = 'c';
-		}
-	}
 }
 
 
-/* atualizar(Archer*)
+/* atualizar_acao(Archer*)
+ * Atualiza proxima açao de um Archer
+*/
+void atualizar_acao(Archer* arch){
+	char acao[4];
+
+	printf("\t\tArcher\n");
+	printf("Escolha a proxima ação, digite [m] para mover ou [a] para atirar.\n");
+	
+	do{
+		printf("Sua escolha: ");
+		fgets(acao, 4, stdin);
+		sscanf(acao, "%c", &(per->acao));
+	} while(per->acao != 'm');
+}
+
+
+/* atualizar_archer(Archer*, Mensagem*)
  * Atualiza todas as propriedades de um Archer
 */
-
-void atualizarArq(Archer* arq, Mapa* mapa, Mensagem* msg){
-	atualizarAcao(arq);
-
-	switch(arq->body->acao){
-		case 'm':
-			mover(arq, msg);
-			coletarFlecha(arq, mapa, msg);
+void atualizar_archer(Archer* arq, Mensagem* msg){
+	int status = -1;
+	do{
+		atualizar_acao(arq);
+		if(arq->body->acao == 'm'){
+			status = mover(arq->body, msg);
 			break;
-		case 'a':
-			atirar(arq, msg);
-			registrarFlechaLocal(arq, mapa);
+		}
+		if(arq->body->acao == 'a'){
+			status = atirar_flecha(arq, msg);
 			break;
-		default:
-			printf("Ação inválida\n");
-			atualizarArq(arq, mapa, msg);
-	}
+		}
+	} while(status == -1);
 }
 
 
-/* apagarArq(Archer*)
+/* apagar_archer(Archer*)
  * Libera memória alocada ao utilizar a função 'criarArq(int, int)'
 */ 
-
-void apagarArq(Archer* arq){
+void apagar_archer(Archer* arq){
 	if(arq == NULL){
 		return;
 	}
