@@ -149,12 +149,12 @@ void interpretarMensagem(Mensagem* msg, Persona* per, Mapa* mapa, int per_num){
 }
 
 
-/* mensagemInicial(Mensagem*, Archer*, int)
+/* mensagemInicial(Mensagem*, Persona*[], int)
  * Constroi a primeira mensagem do servidor
  * Passa informações de criação pro jogador.
 */
 
-void mensagemInicial(Mensagem* msg, Persona* per, int clientfd){
+void mensagemInicial(Mensagem* msg, Persona* per[], int clientfd){
 	msg->acao = "qqq";
 	msg->x[0] = per[0]->x;
 	msg->y[0] = per[0]->y;

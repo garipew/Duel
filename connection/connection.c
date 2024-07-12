@@ -74,21 +74,25 @@ int findConnection(char* ip, char* port){
 }
 
 
-/* connectPlayer(int)
- * Aceita tentativa de conexão e retorna o fd
+/* connectPlayer(int, Mensagem*, Persona*[], int)
+ * Aceita tentativa de conexão, retorna o fd e envia a mensagem inicial
 */ 
-int conectarJogador(int servfd){
+int conectarJogador(int servfd, Mensagem* msg, Persona* pers[], int start){
 	struct sockaddr_storage client_addr;
 	socklen_t sin_size;
 	char s[INET6_ADDRSTRLEN];
 	int playerfd;
+	Persona* enviados[3];
+	for(int i=0; i < 3; i++){
+		enviados[i] = pers[i+start];
+	}
 		
 	sin_size = sizeof(playerfd);
 	playerfd = accept(servfd, (struct sockaddr*)&client_addr, &sin_size);
-		
 	inet_ntop(client_addr.ss_family, &(((struct sockaddr_in*)&client_addr)->sin_addr), s, sizeof(s));
 	printf("connection from: %s\n", s);
 	
+	mensagemInicial(msg, enviados, playerfd);
 	return playerfd;
 }
 
@@ -124,10 +128,68 @@ int start_server(lua_State* L){
 }
 
 
-/* client_thread()
- * Cria uma thread para executar as funções do client
-*/
+void atualizar(Mensagem* msg, Mapa* map, Archer* arch, Healer* heal, Hunter* hunt, int selecionado){
+	if(selecionado==0){
+		atualizarArq(arch, map, msg);
+	} else if(selecionado==1){
+		atualizar_healer(heal, map, msg);
+	} else if(selecionado==2){
+		atualizar_hunter(hunter, map, msg);
+	}
+
+	atualizarMapa(mapa, arch, heal, hunt);
+}
+
+
 void* client_thread(void* ip){
+	char* ipString = (char*)ip;
+	Mapa* mapa = criarMapa();
+	Mensagem* msg = criarMensagem();
+	int serverfd = findConnection(ipString, "3490");
+
+	Archer* arch = criarArq(0, 0);
+	Healer* heal = novo_healer(0, 0);
+	Hunter* hunt = novo_hunter(0, 0);
+	Persona* bodys[3] = {
+			arch->body,
+			heal->body,
+			hunt->body
+			}
+
+	recv(serverfd, (char*)msg->string, sizeof(msg->string), 0);
+	lerMensagem(msg);
+	for(int i=0;i<3;i++){
+		interpretarMensagem(msg, bodys[i], mapa, i);
+	}
+	atualizarMapa(mapa, arch, heal, hunt);
+	escreverTutorial();
+	do{
+		recv(serverfd, (char*)msg->string, sizeof(msg->string), 0);
+		lerMensagem(msg);
+		for(int i=0;i<3;i++){
+			interpretarMensagem(msg, bodys[i], mapa, i);
+			desenharMapa(mapa);
+			if(msg->acao[i] != 'o' && msg->acao[i] != 'k'){
+				atualizar(msg, mapa, arch, heal, hunt, i);
+				desenharMapa(mapa);
+			}
+		}
+		escreverMensagem(msg);
+		send(serverfd, (char*)msg->string, sizeof(msg->string), 0);
+	}while(msg->acao != 'k' && msg->acao != 'o');
+
+	if(msg->acao == 'k'){
+		printf("Voce ganhou!!!\n");
+	}else if(msg->acao == 'o'){
+		printf("Voce perdeu...\n");
+	}
+	apagarArq(arch);
+	apagar_healer(heal);
+	apagar_hunter(hunt);
+	apagarMapa(mapa);
+	close(serverfd);
+
+	return 0;
 }
 
 
@@ -135,6 +197,52 @@ void* client_thread(void* ip){
  * Cria uma thread para executar as funções do server
 */
 void* server_thread(void* serverfd){
+	int* servfd = (int*)serverfd;
+	int playerfd[2];
+	struct addrinfo hint, *p, *servinfo;
+	int turno = 0;
+	Mensagem* msg = criarMensagem();
+	int num_bytes;
+
+	srand(time(NULL));
+	Persona* pers[] = {
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT), 
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT),
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT),
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT),
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT),
+			nova_persona(rand() % MAXWIDTH, rand() % MAXHEIGHT)
+			};
+	Mapa* mapa = criarMapa();
+	playerfd[0] = conectarJogador(*servfd, msg, pers, 0);
+	playerfd[1] = conectarJogador(*servfd, msg, pers, 3);
+
+	msg->acao = 't';
+	do{
+		escreverMensagem(msg);
+		if(send(playerfd[turno%2], (char*)msg->string, sizeof(msg->string), 0) == -1){
+			handle_error("send");
+		}
+		if(num_bytes = recv(playerfd[turno%2], (char*)msg->string, sizeof(msg->string), 0) == -1){
+			handle_error("recv");
+		}
+		lerMensagem(msg);
+		for(int i = 0; i < 3; i++){
+			interpretarMensagem(msg, pers[i * (1 + (turno%2))], mapa, i);
+			atualizarMapaServer(mapa, pers, msg);
+		}
+		turno++;
+	} while(msg->acao != 'k');
+
+	for(int i = 0; i < 6; i++){
+		apagar_persona(pers[i]);
+	}
+	apagarMapa(mapa);
+	close(playerfd[0]);
+	close(playerfd[1]);
+	close(*servfd);
+
+	return 0;
 }
 
 
