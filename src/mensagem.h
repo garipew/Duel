@@ -7,6 +7,8 @@
 typedef struct persona Persona;
 typedef struct arch Archer;
 typedef struct mapa Mapa;
+typedef struct healer Healer;
+typedef struct hunter Hunter;
 
 typedef struct msg{
 
