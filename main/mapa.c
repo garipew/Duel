@@ -4,31 +4,93 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define ARRAYSIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+
 
 /* criarMapa()
  * Aloca memoria para um novo mapa e retorna ponteiro para
  * nova struct Mapa
 */
-
 Mapa* criarMapa(){
-
 	Mapa* mapa = malloc(sizeof(*mapa));
-	
-	for(int i = 0; i < MAXHEIGHT; i++){
-		for(int j = 0; j < MAXWIDTH; j++){
-			mapa->pos[i][j] = 0;
+	mapa->width = MAXWIDTH;
+	mapa->height = MAXHEIGHT;
+	memset(mapa->flechas, -1, sizeof(mapa->flechas))
+	return mapa;
+}
+
+
+/* checar_posicao(Mapa*, int, int)
+ * Checa se há uma flecha na posicao dada como parametro e retorna o caractere
+ * que deve ser escrito
+ */
+char checar_posicao(Mapa* map, int y, int x){
+	for(int i=0; i<6; i++){
+		if(mapa->flechas[i][0] == x && mapa->flechas[i][1] == y){
+			return 'x';
 		}
 	}
+	return '.';
+}
 
-	return mapa;
 
+/* desenhar_mapa(Mapa*)
+ * Desenha o mapa
+*/
+void desenhar_mapa(Mapa* map){
+	for(int i=0; i<map->height; i++){
+		for(int j=0; j<map->width; j++){
+			printf("%c ", checar_posicao(map, i, j));
+		}
+		printf("\n");	
+	}
+}
+
+
+/* registra_flecha(Mapa*, int, int)
+ * Armazena a posicao de uma flecha no mapa
+*/
+void registrar_flecha(Mapa* mapa, int x, int y){
+	for(int i = 0; i < 6; i++){
+		if(mapa->flechas[i][0] != 0){
+			continue;
+		}
+		mapa->flechas[i][1] = x;
+		mapa->flechas[i][2] = y;
+		break;
+	}
+}
+
+
+/* atualizar_mapa(Mapa*, Persona*[])
+ * Verifica se uma flecha foi coletada
+*/
+void atualizar_mapa(Mapa* map, Persona* pers[]){
+	for(int i=0; i<ARRAYSIZE(flechas); i++){
+		if(mapa->flechas[i][0] == pers[i % ARRAYSIZE(pers)]->x &&
+				mapa->flechas[i][1] == pers[i% ARRAYSIZE(pers)]->y){
+			mapa->flechas[i][0] = -1;
+			mapa->flechas[i][1] = -1;
+		}
+	}
+}
+
+
+/* apagar_mapa(Mapa*)
+ * Libera memoria alocada na funcao 'criarMapa()'
+*/
+void apagarMapa(Mapa* mapa){
+	if(mapa == NULL){
+		return;
+	}
+
+	free(mapa);
 }
 
 
 /* revelarFlechaColetada(Mapa*, int, int)
  * Revela que flecha foi coletada por inimigo anteriormente
 */ 
-
 void revelarFlechaColetada(Mapa* mapa, int x, int y){
 	if(mapa->pos[y][x] > 0){
 		mapa->pos[y][x]--;
@@ -36,143 +98,19 @@ void revelarFlechaColetada(Mapa* mapa, int x, int y){
 }
 
 
-/* atualizarMapa(Archer*)
- * Atualiza posicoes no mapa
- * Jogador é registrado como -1.
- * Qualquer valor < -1 indica flechas na pos do Jogador.
- * Quantidade de flechas são armazenadas com valores entre -5 e 6 
- * Valores < -5 são especiais, player morto ou eco por exemplo
-*/
-
-void atualizarMapa(Mapa* mapa, Archer* arq){
-	
-	int xFlecha, yFlecha;	
-
-	for(int i = 0; i < MAXHEIGHT; i++){
-		for(int j = 0; j < MAXWIDTH; j++){
-			if(mapa->pos[i][j] <= -20){
-				mapa->pos[i][j] += 20;
-				mapa->pos[i][j] *= -1;
-				continue;
-			}
-
-			if(mapa->pos[i][j] < 0){
-				mapa->pos[i][j]++;
-				mapa->pos[i][j] *= -1;
-			}
-		}
-	}
-
-	mapa->pos[arq->y][arq->x] *= -1;
-	mapa->pos[arq->y][arq->x]--;
-	
-
-	for(int k = 0; k < 3; k++){
-		if(mapa->flechasColetadas[k][0] > 0){
-			mapa->flechasColetadas[k][0]--;
-		}
-
-		if(mapa->flechasColetadas[k][0] == 0){
-			revelarFlechaColetada(mapa, mapa->flechasColetadas[k][1], mapa->flechasColetadas[k][2]);
-		}
-	}	
-
-}
-
-
-/* atualizarMapaServer(Mapa*, Archer*, Archer*, Mensagem*)
- * Atualiza o mapa, usado apenas pelo servidor.
-*/
-
-void atualizarMapaServer(Mapa* mapa, Archer* arq1, Archer* arq2, Mensagem* msg){
-	
-	int xFlecha, yFlecha;	
-
-	for(int i = 0; i < MAXHEIGHT; i++){
-		for(int j = 0; j < MAXWIDTH; j++){
-			
-			if(mapa->pos[i][j] < 0){ 
-				mapa->pos[i][j]++;
-				mapa->pos[i][j] *= -1;
-			}
-		}
-	}
-
-	mapa->pos[arq1->y][arq1->x] *= -1;
-	mapa->pos[arq1->y][arq1->x]--;
-	
-	mapa->pos[arq2->y][arq2->x] *= -1;
-	mapa->pos[arq2->y][arq2->x]--;
-
-}
-
-
 /* registrarFlechaColetada(int, int)
  * Armazena coordenadas de uma flecha coletada pelo inimigo
  * Para revelar posteriormente.
 */
-
 void registrarFlechaColetada(Mapa* mapa, int x, int y){
 	for(int i = 0; i < 3; i++){
-				
-		if(mapa->flechasColetadas[i][0] != 0){
+		if(mapa->flechas[i][0] != 0){
 			continue;
 		}
-				
-		mapa->flechasColetadas[i][0] = 3;
-		mapa->flechasColetadas[i][1] = x;
-		mapa->flechasColetadas[i][2] = y;
-				
+		mapa->flechas[i][0] = 3;
+		mapa->flechas[i][1] = x;
+		mapa->flechas[i][2] = y;
 		break;
 	}
 }
 
-
-/* desenharMapa(Archer*)
- * Desenha o mapa e o jogador
-*/ 
-void desenharMapa(Mapa* mapa){
-
-	for(int i = 0; i < MAXHEIGHT; i++){
-		for(int j = 0; j < MAXWIDTH; j++){
-			
-			if(mapa->pos[i][j] <= -20){
-				printf("? ");
-				continue;
-			}
-
-			if(mapa->pos[i][j] < -10){
-				printf("# ");
-				continue;
-			}
-			
-			if(mapa->pos[i][j] < 0){
-				printf("@ ");
-			}else if(mapa->pos[i][j] == 0){
-				printf(". ");
-			} else{
-				printf("x ");
-			}
-
-
-		}
-		printf("\n");
-	}
-
-	printf("\n\n");
-}
-
-
-/* apagarMapa(Mapa*)
- * Libera memoria alocada na funcao 'criarMapa()'
-*/
-
-void apagarMapa(Mapa* mapa){
-	
-	if(mapa == NULL){
-		return;
-	}
-
-	free(mapa);
-
-}

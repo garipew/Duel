@@ -5,17 +5,16 @@
 #define MAXHEIGHT 16
 
 struct mapa{
-
-	int pos[MAXHEIGHT][MAXWIDTH];
-	int flechasColetadas[3][3];
-
+	int width;
+	int height;
+	int flechas[6][2];
 };
 
 
 Mapa* criarMapa();
-void atualizarMapa(Mapa*, Archer*);
-void atualizarMapaServer(Mapa*, Archer*, Mensagem*);
+void atualizar_mapa(Mapa*, Persona*[]);
+void desenhar_mapa(Mapa*);
+void registrar_flecha(mapa*, int, int);
 void registrarFlechaColetada(Mapa*, int, int);
-void desenharMapa(Mapa*);
-void apagarMapa(Mapa*);
+void apagar_mapa(Mapa*);
 #endif
