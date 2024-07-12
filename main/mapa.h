@@ -14,7 +14,7 @@ struct mapa{
 
 Mapa* criarMapa();
 void atualizarMapa(Mapa*, Archer*);
-void atualizarMapaServer(Mapa*, Archer*, Archer*, Mensagem*);
+void atualizarMapaServer(Mapa*, Archer*, Mensagem*);
 void registrarFlechaColetada(Mapa*, int, int);
 void desenharMapa(Mapa*);
 void apagarMapa(Mapa*);

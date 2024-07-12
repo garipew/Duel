@@ -12,10 +12,10 @@ typedef struct hunter Hunter;
 
 typedef struct msg{
 
-	int x;
-	int y;
-	char acao;
-	char string[7];
+	int x[3];
+	int y[3];
+	char acao[3];
+	char string[21]; // a-x-y
 
 } Mensagem;
 
@@ -23,6 +23,6 @@ typedef struct msg{
 Mensagem* nova_mensagem();
 void ler_mensagem(Mensagem*);
 void escrever_mensagem(Mensagem*);
-void interpretar_mensagem(Mensagem*, Persona*[], Mapa*);
+void interpretar_mensagem(Mensagem*, Persona*, Mapa*, int);
 void mensagem_inicial(Mensagem*, Persona*[], int);
 #endif
