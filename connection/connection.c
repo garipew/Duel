@@ -146,6 +146,7 @@ void* client_thread(void* ip){
 	Mapa* mapa = criarMapa();
 	Mensagem* msg = criarMensagem();
 	int serverfd = findConnection(ipString, "3490");
+	int status = 1;
 
 	Archer* arch = criarArq(0, 0);
 	Healer* heal = novo_healer(0, 0);
@@ -161,28 +162,27 @@ void* client_thread(void* ip){
 	for(int i=0;i<3;i++){
 		interpretarMensagem(msg, bodys[i], mapa, i);
 	}
-	atualizarMapa(mapa, arch, heal, hunt);
+	atualizar_mapa(mapa, bodys);
 	escreverTutorial();
-	do{
+	while(status != 0){
 		recv(serverfd, (char*)msg->string, sizeof(msg->string), 0);
 		lerMensagem(msg);
-		for(int i=0;i<3;i++){
-			interpretarMensagem(msg, bodys[i], mapa, i);
-			desenharMapa(mapa);
-			if(msg->acao[i] != 'o' && msg->acao[i] != 'k'){
-				atualizar(msg, mapa, arch, heal, hunt, i);
-				desenharMapa(mapa);
-			}
-		}
+		
+		status = 0;	
+		status += atualizar_archer(arch, msg); // atualizar retorna 1 caso personagem esteja vivo e 0 caso morto
+		status += atualizar_healer(heal, msg); // somando eles, status so vai ser 0 quando os tres estiverem mortos
+		status += atualizar_hunter(hunt, msg);
+		atualizar_mapa(map, bodys);
+
+		desenhar_mapa(map);
+		desenhar_persona(bodys[0]);
+		desenhar_persona(bodys[1]);
+		desenhar_persona(bodys[2]);
+	
 		escreverMensagem(msg);
 		send(serverfd, (char*)msg->string, sizeof(msg->string), 0);
-	}while(msg->acao != 'k' && msg->acao != 'o');
-
-	if(msg->acao == 'k'){
-		printf("Voce ganhou!!!\n");
-	}else if(msg->acao == 'o'){
-		printf("Voce perdeu...\n");
 	}
+
 	apagarArq(arch);
 	apagar_healer(heal);
 	apagar_hunter(hunt);
